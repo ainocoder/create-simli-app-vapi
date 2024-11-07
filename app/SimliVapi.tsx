@@ -1,14 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-// import { useConversation } from "@11labs/react";
-import { useConversation } from "./simli-elevenlabs/elevenlabs-react";
+import React, { use, useCallback, useEffect, useRef, useState } from "react";
+import Vapi from "@vapi-ai/web";
 import { SimliClient } from "simli-client";
 import VideoBox from "./Components/VideoBox";
 import cn from "./utils/TailwindMergeAndClsx";
 import IconSparkleLoader from "@/media/IconSparkleLoader";
 import { send } from "process";
-import { getElevenLabsSignedUrl } from "./actions/actions";
 
-interface SimliElevenlabsProps {
+interface SimliVapiProps {
   simli_faceid: string;
   agentId: string; // ElevenLabs agent ID
   onStart: () => void;
@@ -16,9 +14,10 @@ interface SimliElevenlabsProps {
   showDottedFace: boolean;
 }
 
+const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY as string);
 const simliClient = new SimliClient();
 
-const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
+const SimliVapi: React.FC<SimliVapiProps> = ({
   simli_faceid,
   agentId,
   onStart,
@@ -29,49 +28,62 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarVisible, setIsAvatarVisible] = useState(false);
   const [error, setError] = useState("");
-  const [userMessage, setUserMessage] = useState("...");
 
   // Refs for media elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Initialize ElevenLabs conversation hook
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log("ElevenLabs conversation connected");
-      setIsAvatarVisible(true);
-      setIsLoading(false);
-      // sendAudioDataToSimli();
-    },
+  useEffect(() => {
+    vapi.on("message", (message) => {
+      console.log("Vapi message:", message);
+    });
 
-    onDisconnect: () => {
-      console.log("ElevenLabs conversation disconnected");
-      setIsAvatarVisible(false);
-      simliClient?.ClearBuffer();
-      simliClient?.close();
-    },
+    vapi.on("call-start", () => {
+      console.log("Vapi call started");
+      const dailyCall = vapi.getDailyCallObject();
+      const participants = dailyCall?.participants();
 
-    onMessage: (message) => {
-      console.log("ElevenLabs conversation message:", message);
-    },
+      try {
+        Object.values(participants).forEach((participant) => {
+          const audioTrack = participant.tracks.audio.track;
+          if (audioTrack) {
+            // This is the audio output track for this participant
+            console.log(
+              `Audio track for ${participant.user_name}:`,
+              audioTrack
+            );
+          }
 
-    onModeChange(data) {
-      console.log("ElevenLabs conversation mode change:", data);
-      if (data.mode === "interrupted") {
-        simliClient?.ClearBuffer();
+          if(participant.user_name === "Vapi Speaker") {
+            console.log("Vapi Speaker detected");
+            simliClient.listenToMediastreamTrack(audioTrack as MediaStreamTrack);
+          }
+        });
+      } catch (error: any) {
+        console.error("Error getting audio track:", error);
       }
-    },
 
-    onError: (error) => {
-      console.error("ElevenLabs conversation error:", error);
-      setError(`Conversation error: ${error}`);
-    },
+      setIsAvatarVisible(true);
+    });
 
-    onAudioData: (audioData: Uint8Array) => {
-      console.log("ElevenLabs conversation audio data:", audioData);
-      simliClient.sendAudioData(audioData);
-    },
-  });
+    vapi.on("call-end", () => {
+      console.log("Vapi call ended");
+      setIsAvatarVisible(false);
+    });
+  }, []);
+
+  /**
+   * Start Vapi interaction
+   */
+  const startVapiInteraction = async () => {
+    try {
+      await vapi.start(agentId);
+      console.log("Vapi interaction started");
+    } catch (error: any) {
+      console.error("Error starting Vapi interaction:", error);
+      setError(`Error starting Vapi interaction: ${error.message}`);
+    }
+  };
 
   /**
    * Initializes the Simli client with the provided configuration.
@@ -91,26 +103,6 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
     }
   }, [simli_faceid]);
 
-  const startElevenLabsConversation = async () => {
-    // If agent is not publis then we must get signed URL from ElevenLabs
-    await getElevenLabsSignedUrl(agentId).then((res) => {
-      if ("error" in res) {
-        console.error("Failed to get ElevenLabs URL:", res.error);
-        return;
-      }
-
-      console.log("Got ElevenLabs signed URL:", res.signed_url);
-
-      // Mute ElevenLabs internal audio to only hear it from Simli's side
-      conversation.setVolume({ volume: 0.0 });
-
-      conversation.startSession({
-        agentId: agentId,
-        signedUrl: res.signed_url,
-      });
-    });
-  };
-
   /**
    * Handles the start of the interaction
    */
@@ -123,6 +115,9 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
+      // Start Vapi interaction
+      await startVapiInteraction();
+
       // Start Simli client
       await simliClient?.start();
     } catch (error: any) {
@@ -130,7 +125,7 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
       setError(`Error starting interaction: ${error.message}`);
       setIsLoading(false);
     }
-  }, [agentId, conversation, onStart]);
+  }, [agentId, onStart]);
 
   /**
    * Handles stopping the interaction
@@ -141,15 +136,12 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
     setError("");
     setIsAvatarVisible(false);
 
-    // Clean up ElevenLabs conversation
-    conversation.endSession();
-
     // Clean up Simli client
     simliClient?.close();
 
     onClose();
     console.log("Interaction stopped");
-  }, [conversation, onClose]);
+  }, [onClose]);
 
   // Initialize Simli client on mount
   useEffect(() => {
@@ -161,18 +153,12 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
         const audioData = new Uint8Array(6000).fill(0);
         simliClient?.sendAudioData(audioData);
         console.log("Sent initial audio data");
-
-        startElevenLabsConversation();
       });
 
       simliClient?.on("disconnected", () => {
         console.log("SimliClient disconnected");
       });
     }
-
-    // return () => {
-    //   conversation.endSession();
-    // };
   }, [initializeSimliClient]);
 
   return (
@@ -223,4 +209,4 @@ const SimliElevenlabs: React.FC<SimliElevenlabsProps> = ({
   );
 };
 
-export default SimliElevenlabs;
+export default SimliVapi;

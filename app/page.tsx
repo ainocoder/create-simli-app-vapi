@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SimliElevenlabs from "@/app/SimliElevenlabs";
+import SimliVapi from "@/app/SimliVapi";
 import DottedFace from "./Components/DottedFace";
 import SimliHeaderLogo from "./Components/Logo";
 import Navbar from "./Components/Navbar";
@@ -8,13 +8,13 @@ import Image from "next/image";
 import GitHubLogo from "@/media/github-mark-white.svg";
 
 interface avatarSettings {
-  elevenlabs_agentid: string;
+  vapi_agentid: string;
   simli_faceid: string;
 }
 
 // Customize your avatar here
 const avatar: avatarSettings = {
-  elevenlabs_agentid: "Qb4G8MrN8FoquWtnvhJS",
+  vapi_agentid: "0634c424-7c38-46f5-adbe-9bffd86fc918",
   simli_faceid: "ac0679f3-fee3-41e0-be9e-05d3549a3d3f",
 };
 
@@ -39,19 +39,19 @@ const Demo: React.FC = () => {
       <div className="absolute top-[32px] right-[32px]">
         <text
           onClick={() => {
-            window.open("https://github.com/simliai/create-simli-app-elevenlabs");
+            window.open("https://github.com/simliai/create-simli-app-vapi");
           }}
           className="font-bold cursor-pointer mb-8 text-xl leading-8"
         >
           <Image className="w-[20px] inline mr-2" src={GitHubLogo} alt="" />
-          create-simli-app (ElevenLabs)
+          create-simli-app (Vapi)
         </text>
       </div>
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
           {showDottedFace && <DottedFace />}
-          <SimliElevenlabs
-            agentId={avatar.elevenlabs_agentid}
+          <SimliVapi
+            agentId={avatar.vapi_agentid}
             simli_faceid={avatar.simli_faceid}
             onStart={onStart}
             onClose={onClose}
@@ -68,7 +68,7 @@ const Demo: React.FC = () => {
         </span>
         <ul className="list-decimal list-inside max-w-[350px] ml-[6px] mt-2">
           <li className="mb-1">
-            Fill in your ElevenLabs and Simli API keys in .env file.
+            Fill in your Vapi and Simli API keys in .env file.
           </li>
           <li className="mb-1">
             Test out the interaction and have a talk with the ElevnLabs-powered,
