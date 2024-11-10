@@ -127,43 +127,6 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     }
   };
 
-  /**
-   * Mute Vapi internal audio and only keep simli's audio
-   */
-  const muteVapiInternalAudio = () => {
-    const audioElements = document.getElementsByTagName("audio");
-
-    for (let i = 0; i < audioElements.length; i++) {
-      if (audioElements[i].id !== "simli_audio") {
-        audioElements[i].muted = true;
-      }
-    }
-  };
-
-  /**
-   * Send Vapi audio media stream track to Simli
-   */
-  const sendVapiAudioTrackToSimli = () => {
-    try {
-      const dailyCall = vapi.getDailyCallObject();
-      const participants = dailyCall?.participants();
-      Object.values(participants).forEach((participant) => {
-        const audioTrack = participant.tracks.audio.track;
-        if (audioTrack) {
-          // This is the audio output track for this participant
-          console.log(`Audio track for ${participant.user_name}:`, audioTrack);
-        }
-
-        if (participant.user_name === "Vapi Speaker") {
-          console.log("Vapi Speaker detected");
-          simliClient.listenToMediastreamTrack(audioTrack as MediaStreamTrack);
-        }
-      });
-    } catch (error: any) {
-      console.error("Error getting audio track:", error);
-    }
-  };
-
   // Initialize Simli client on mount
   useEffect(() => {
     initializeSimliClient();
