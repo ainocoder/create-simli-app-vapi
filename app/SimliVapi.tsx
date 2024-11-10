@@ -4,7 +4,6 @@ import { SimliClient } from "simli-client";
 import VideoBox from "./Components/VideoBox";
 import cn from "./utils/TailwindMergeAndClsx";
 import IconSparkleLoader from "@/media/IconSparkleLoader";
-import { send } from "process";
 
 interface SimliVapiProps {
   simli_faceid: string;

@@ -14,8 +14,8 @@ interface avatarSettings {
 
 // Customize your avatar here
 const avatar: avatarSettings = {
-  vapi_agentid: "0634c424-7c38-46f5-adbe-9bffd86fc918",
-  simli_faceid: "ac0679f3-fee3-41e0-be9e-05d3549a3d3f",
+  vapi_agentid: "VAPI_AGENT_ID",
+  simli_faceid: "5514e24d-6086-46a3-ace4-6a7264e5cb7c",
 };
 
 const Demo: React.FC = () => {
@@ -71,7 +71,7 @@ const Demo: React.FC = () => {
             Fill in your Vapi and Simli API keys in .env file.
           </li>
           <li className="mb-1">
-            Test out the interaction and have a talk with the ElevnLabs-powered,
+            Test out the interaction and have a talk with the Vapi-powered,
             Simli-visualized avatar.
           </li>
           <li className="mb-1">
