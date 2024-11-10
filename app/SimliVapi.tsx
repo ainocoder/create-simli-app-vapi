@@ -151,6 +151,15 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
 
       vapi.on("message", (message) => {
         console.log("Vapi message:", message);
+
+        if (
+          message.type === "speech-update" &&
+          message.status === "started" &&
+          message.role === "user"
+        ) {
+          console.log("User started speaking");
+          simliClient.ClearBuffer();
+        }
       });
 
       vapi.on("call-start", () => {
