@@ -27,7 +27,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarVisible, setIsAvatarVisible] = useState(false);
   const [error, setError] = useState("");
-  const doRunOnce = useRef(true);
+  const doRunOnce = useRef(false);
 
   // Refs for media elements
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -75,9 +75,6 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     try {
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Start Vapi interaction
-      await startVapiInteraction();
 
       // Start Simli client
       await simliClient?.start();
@@ -129,28 +126,29 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   // Initialize Simli client on mount
   useEffect(() => {
     initializeSimliClient();
-
-    if (simliClient) {
-      simliClient?.on("connected", () => {
-        console.log("SimliClient connected");
-        const audioData = new Uint8Array(6000).fill(0);
-        simliClient?.sendAudioData(audioData);
-        console.log("Sent initial audio data");
-      });
-
-      simliClient?.on("disconnected", () => {
-        console.log("SimliClient disconnected");
-      });
+    if (doRunOnce.current) {
+      if (simliClient) {
+        simliClient?.on("connected", () => {
+          console.log("SimliClient connected");
+          const audioData = new Uint8Array(6000).fill(0);
+          simliClient?.sendAudioData(audioData);
+          // Start Vapi interaction
+          startVapiInteraction();
+          console.log("Sent initial audio data");
+        });
+        
+        simliClient?.on("disconnected", () => {
+          console.log("SimliClient disconnected");
+        });
+      }
     }
   }, [initializeSimliClient]);
-
+  
   useEffect(() => {
     if (doRunOnce.current) {
-      doRunOnce.current = false;
-
       vapi.on("message", (message) => {
         console.log("Vapi message:", message);
-
+        
         if (
           message.type === "speech-update" &&
           message.status === "started" &&
@@ -160,11 +158,11 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
           simliClient.ClearBuffer();
         }
       });
-
+      
       vapi.on("call-start", () => {
         console.log("Vapi call started");
-        getAudioElementAndSendToSimli();
         setIsAvatarVisible(true);
+        getAudioElementAndSendToSimli();
       });
 
       vapi.on("call-end", () => {
@@ -172,6 +170,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         setIsAvatarVisible(false);
       });
     }
+    doRunOnce.current = true;
   }, []);
 
   return (
