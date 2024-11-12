@@ -34,37 +34,6 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
 
   /**
-   * Start Vapi interaction
-   */
-  const startVapiInteraction = async () => {
-    try {
-      await vapi.start(agentId);
-      console.log("Vapi interaction started");
-    } catch (error: any) {
-      console.error("Error starting Vapi interaction:", error);
-      setError(`Error starting Vapi interaction: ${error.message}`);
-    }
-  };
-
-  /**
-   * Initializes the Simli client with the provided configuration.
-   */
-  const initializeSimliClient = useCallback(() => {
-    if (videoRef.current && audioRef.current) {
-      const SimliConfig = {
-        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
-        faceID: simli_faceid,
-        handleSilence: true,
-        videoRef: videoRef,
-        audioRef: audioRef,
-      };
-
-      simliClient.Initialize(SimliConfig as any);
-      console.log("Simli Client initialized");
-    }
-  }, [simli_faceid]);
-
-  /**
    * Handles the start of the interaction
    */
   const handleStart = useCallback(async () => {
@@ -73,11 +42,14 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     onStart();
 
     try {
+      initializeSimliClient();
+
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
       // Start Simli client
       await simliClient?.start();
+      eventListenerSimli();
     } catch (error: any) {
       console.error("Error starting interaction:", error);
       setError(`Error starting interaction: ${error.message}`);
@@ -102,6 +74,38 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   }, [onClose]);
 
   /**
+   * Initializes the Simli client with the provided configuration.
+   */
+  const initializeSimliClient = useCallback(() => {
+    if (videoRef.current && audioRef.current) {
+      const SimliConfig = {
+        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+        faceID: simli_faceid,
+        handleSilence: true,
+        videoRef: videoRef,
+        audioRef: audioRef,
+      };
+
+      simliClient.Initialize(SimliConfig as any);
+      console.log("Simli Client initialized");
+    }
+  }, [simli_faceid]);
+
+  /**
+   * Start Vapi interaction
+   */
+  const startVapiInteraction = async () => {
+    try {
+      await vapi.start(agentId);
+      console.log("Vapi interaction started");
+      eventListenerVapi();
+    } catch (error: any) {
+      console.error("Error starting Vapi interaction:", error);
+      setError(`Error starting Vapi interaction: ${error.message}`);
+    }
+  };
+
+  /**
    * Get audio element and send to Simli
    */
   const getAudioElementAndSendToSimli = () => {
@@ -113,7 +117,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
           audioElements[i].muted = true;
           console.log("Sending audio element to Simli:", audioElements[i]);
           simliClient.listenToMediastreamTrack(
-            audioElements[i].captureStream().getTracks()[0]
+            (audioElements[i] as any).captureStream().getTracks()[0]
           );
           return;
         }
@@ -123,54 +127,53 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     }
   };
 
-  // Initialize Simli client on mount
-  useEffect(() => {
-    initializeSimliClient();
-    if (doRunOnce.current) {
-      if (simliClient) {
-        simliClient?.on("connected", () => {
-          console.log("SimliClient connected");
-          const audioData = new Uint8Array(6000).fill(0);
-          simliClient?.sendAudioData(audioData);
-          // Start Vapi interaction
-          startVapiInteraction();
-          console.log("Sent initial audio data");
-        });
-        
-        simliClient?.on("disconnected", () => {
-          console.log("SimliClient disconnected");
-        });
+  /**
+   * Vapi Event listeners
+   */
+  const eventListenerVapi = useCallback(() => {
+    vapi.on("message", (message) => {
+      console.log("Vapi message:", message);
+      if (
+        message.type === "speech-update" &&
+        message.status === "started" &&
+        message.role === "user"
+      ) {
+        console.log("User started speaking");
+        simliClient.ClearBuffer();
       }
-    }
-  }, [initializeSimliClient]);
-  
-  useEffect(() => {
-    if (doRunOnce.current) {
-      vapi.on("message", (message) => {
-        console.log("Vapi message:", message);
-        
-        if (
-          message.type === "speech-update" &&
-          message.status === "started" &&
-          message.role === "user"
-        ) {
-          console.log("User started speaking");
-          simliClient.ClearBuffer();
-        }
-      });
-      
-      vapi.on("call-start", () => {
-        console.log("Vapi call started");
-        setIsAvatarVisible(true);
-        getAudioElementAndSendToSimli();
+    });
+
+    vapi.on("call-start", () => {
+      console.log("Vapi call started");
+      setIsAvatarVisible(true);
+      getAudioElementAndSendToSimli();
+    });
+
+    vapi.on("call-end", () => {
+      console.log("Vapi call ended");
+      setIsAvatarVisible(false);
+    });
+  }, []);
+
+  /**
+   * Simli Event listeners
+   */
+  const eventListenerSimli = useCallback(() => {
+    if (simliClient) {
+      simliClient?.on("connected", () => {
+        console.log("SimliClient connected");
+        const audioData = new Uint8Array(6000).fill(0);
+        simliClient?.sendAudioData(audioData);
+        // Start Vapi interaction
+        startVapiInteraction();
+        console.log("Sent initial audio data");
       });
 
-      vapi.on("call-end", () => {
-        console.log("Vapi call ended");
-        setIsAvatarVisible(false);
+      simliClient?.on("disconnected", () => {
+        console.log("SimliClient disconnected");
+        vapi.stop();
       });
     }
-    doRunOnce.current = true;
   }, []);
 
   return (
