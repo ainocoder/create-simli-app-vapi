@@ -81,7 +81,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       const SimliConfig = {
         apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
         faceID: simli_faceid,
-        handleSilence: true,
+        handleSilence: false,
         videoRef: videoRef,
         audioRef: audioRef,
       };
