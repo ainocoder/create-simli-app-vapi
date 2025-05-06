@@ -10,16 +10,42 @@ import GitHubLogo from "@/media/github-mark-white.svg";
 interface avatarSettings {
   vapi_agentid: string;
   simli_faceid: string;
+  vapi_apikey?: string;
+  simli_apikey?: string;
 }
 
 // Customize your avatar here
 const avatar: avatarSettings = {
-  vapi_agentid: "VAPI_AGENT_ID",
-  simli_faceid: "5514e24d-6086-46a3-ace4-6a7264e5cb7c",
+  vapi_agentid: "26638b9a-a7d0-48c5-9ce8-aba9bb2c1371",
+  simli_faceid: "1b8a957b-39cf-4b40-8e84-de676134b892",
+  vapi_apikey: "",
+  simli_apikey: "",
 };
+
+interface SimliVapiProps {
+  simli_faceid: string;
+  agentId: string;
+  vapiKey: string;
+  simliKey: string;
+  onStart: () => void;
+  onClose: () => void;
+  showDottedFace: boolean;
+}
 
 const Demo: React.FC = () => {
   const [showDottedFace, setShowDottedFace] = useState(true);
+  const [agentId, setAgentId] = useState(avatar.vapi_agentid);
+  const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
+  const [vapiKey, setVapiKey] = useState(avatar.vapi_apikey || "");
+  const [simliKey, setSimliKey] = useState(avatar.simli_apikey || "");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setAgentId(params.get('agentId') || avatar.vapi_agentid);
+    setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
+    setVapiKey(params.get('vapiKey') || avatar.vapi_apikey || "");
+    setSimliKey(params.get('simliKey') || avatar.simli_apikey || "");
+  }, []);
 
   const onStart = () => {
     console.log("Setting setshowDottedface to false...");
@@ -37,7 +63,7 @@ const Demo: React.FC = () => {
       <Navbar />
 
       <div className="absolute top-[32px] right-[32px]">
-        <text
+        <span
           onClick={() => {
             window.open("https://github.com/simliai/create-simli-app-vapi");
           }}
@@ -45,14 +71,16 @@ const Demo: React.FC = () => {
         >
           <Image className="w-[20px] inline mr-2" src={GitHubLogo} alt="" />
           create-simli-app (Vapi)
-        </text>
+        </span>
       </div>
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
           {showDottedFace && <DottedFace />}
           <SimliVapi
-            agentId={avatar.vapi_agentid}
-            simli_faceid={avatar.simli_faceid}
+            agentId={agentId}
+            simli_faceid={simliFaceId}
+            vapiKey={vapiKey}
+            simliKey={simliKey}
             onStart={onStart}
             onClose={onClose}
             showDottedFace={showDottedFace}

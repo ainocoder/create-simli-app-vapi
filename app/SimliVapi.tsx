@@ -8,17 +8,18 @@ import IconSparkleLoader from "@/media/IconSparkleLoader";
 interface SimliVapiProps {
   simli_faceid: string;
   agentId: string; // ElevenLabs agent ID
+  vapiKey: string;
+  simliKey: string;
   onStart: () => void;
   onClose: () => void;
   showDottedFace: boolean;
 }
 
-const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY as string);
-const simliClient = new SimliClient();
-
 const SimliVapi: React.FC<SimliVapiProps> = ({
   simli_faceid,
   agentId,
+  vapiKey,
+  simliKey,
   onStart,
   onClose,
   showDottedFace,
@@ -32,6 +33,10 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   // Refs for media elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Vapi와 SimliClient를 props 기반으로 초기화
+  const vapi = React.useMemo(() => new Vapi(vapiKey), [vapiKey]);
+  const simliClient = React.useMemo(() => new SimliClient(), []);
 
   /**
    * Handles the start of the interaction
@@ -55,7 +60,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       setError(`Error starting interaction: ${error.message}`);
       setIsLoading(false);
     }
-  }, [agentId, onStart]);
+  }, [agentId, onStart, simliKey, simli_faceid, simliClient]);
 
   /**
    * Handles stopping the interaction
@@ -71,7 +76,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
 
     onClose();
     console.log("Interaction stopped");
-  }, [onClose]);
+  }, [onClose, simliClient]);
 
   /**
    * Initializes the Simli client with the provided configuration.
@@ -79,7 +84,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const initializeSimliClient = useCallback(() => {
     if (videoRef.current && audioRef.current) {
       const SimliConfig = {
-        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+        apiKey: simliKey,
         faceID: simli_faceid,
         handleSilence: false,
         videoRef: videoRef,
@@ -89,7 +94,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       simliClient.Initialize(SimliConfig as any);
       console.log("Simli Client initialized");
     }
-  }, [simli_faceid]);
+  }, [simli_faceid, simliKey, simliClient]);
 
   /**
    * Start Vapi interaction
@@ -126,7 +131,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       try {
         const dailyCall = vapi.getDailyCallObject();
         const participants = dailyCall?.participants();
-        Object.values(participants).forEach((participant) => {
+        Object.values(participants).forEach((participant: any) => {
           const audioTrack = participant.tracks.audio.track;
           if (audioTrack) {
             // This is the audio output track for this participant
@@ -149,7 +154,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
    * Vapi Event listeners
    */
   const eventListenerVapi = useCallback(() => {
-    vapi.on("message", (message) => {
+    vapi.on("message", (message: any) => {
       console.log("Vapi message:", message);
       if (
         message.type === "speech-update" &&
@@ -171,7 +176,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       console.log("Vapi call ended");
       setIsAvatarVisible(false);
     });
-  }, []);
+  }, [vapi, simliClient]);
 
   /**
    * Simli Event listeners
@@ -192,7 +197,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         vapi.stop();
       });
     }
-  }, []);
+  }, [simliClient, vapi]);
 
   return (
     <>
