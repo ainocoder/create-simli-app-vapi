@@ -2,6 +2,8 @@ import React, { use, useCallback, useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { SimliClient } from "simli-client";
 import VideoBox from "./Components/VideoBox";
+import cn from "./utils/TailwindMergeAndClsx";
+import IconSparkleLoader from "@/media/IconSparkleLoader";
 
 interface SimliVapiProps {
   simli_faceid: string;
@@ -11,6 +13,9 @@ interface SimliVapiProps {
   showDottedFace: boolean;
   autoPlay?: boolean;
 }
+
+const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY as string);
+const simliClient = new SimliClient();
 
 const SimliVapi: React.FC<SimliVapiProps> = ({
   simli_faceid,
@@ -28,13 +33,6 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // 환경변수에서 키를 불러옵니다.
-  const vapiKey = process.env.NEXT_PUBLIC_VAPI_APIKEY || "";
-  const simliKey = process.env.NEXT_PUBLIC_SIMLI_APIKEY || "";
-
-  const vapi = React.useMemo(() => new Vapi(vapiKey), [vapiKey]);
-  const simliClient = React.useMemo(() => new SimliClient(), []);
-
   const handleStart = useCallback(async () => {
     setIsLoading(true);
     setError("");
@@ -48,7 +46,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       setError(`Error starting interaction: ${error.message}`);
       setIsLoading(false);
     }
-  }, [agentId, onStart, simliKey, simli_faceid, simliClient]);
+  }, [agentId, onStart]);
 
   const handleStop = useCallback(() => {
     setIsLoading(false);
@@ -56,12 +54,12 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     setIsAvatarVisible(false);
     simliClient?.close();
     onClose();
-  }, [onClose, simliClient]);
+  }, [onClose]);
 
   const initializeSimliClient = useCallback(() => {
     if (videoRef.current && audioRef.current) {
       const SimliConfig = {
-        apiKey: simliKey,
+        apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
         faceID: simli_faceid,
         handleSilence: false,
         videoRef: videoRef,
@@ -69,7 +67,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       };
       simliClient.Initialize(SimliConfig as any);
     }
-  }, [simli_faceid, simliKey, simliClient]);
+  }, [simli_faceid]);
 
   const startVapiInteraction = async () => {
     try {
@@ -98,6 +96,10 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         if (participants) {
           Object.values(participants).forEach((participant: any) => {
             const audioTrack = participant.tracks.audio.track;
+            if (audioTrack) {
+              // This is the audio output track for this participant
+              console.log(`Audio track for ${participant.user_name}:`, audioTrack);
+            }
             if (participant.user_name === "Vapi Speaker") {
               simliClient.listenToMediastreamTrack(audioTrack as MediaStreamTrack);
             }
@@ -126,7 +128,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     vapi.on("call-end", () => {
       setIsAvatarVisible(false);
     });
-  }, [vapi, simliClient]);
+  }, []);
 
   const eventListenerSimli = useCallback(() => {
     if (simliClient) {
@@ -139,7 +141,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         vapi.stop();
       });
     }
-  }, [simliClient, vapi]);
+  }, []);
 
   useEffect(() => {
     if (autoPlay) {
@@ -147,37 +149,51 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     }
   }, [autoPlay]);
 
-  // 프레임만 가득 차게, 하단 중앙에 종료 버튼만
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <div style={{ width: "100%", height: "100%" }}>
+    <>
+      <div
+        className={`transition-all duration-300 ${
+          showDottedFace ? "h-0 overflow-hidden" : "h-auto"
+        }`}
+      >
         <VideoBox video={videoRef} audio={audioRef} />
       </div>
-      <button
-        onClick={handleStop}
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 64,
-          height: 64,
-          borderRadius: "50%",
-          background: "#FF3B30",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          cursor: "pointer",
-        }}
-        aria-label="End Conversation"
-      >
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="15" width="16" height="2" rx="1" fill="white" />
-        </svg>
-      </button>
-    </div>
+      <div className="flex flex-col items-center">
+        {!isAvatarVisible ? (
+          <button
+            onClick={handleStart}
+            disabled={isLoading}
+            className={cn(
+              "w-full h-[52px] mt-4 disabled:bg-[#343434] disabled:text-white disabled:hover:rounded-[100px] bg-simliblue text-white py-3 px-6 rounded-[100px] transition-all duration-300 hover:text-black hover:bg-white hover:rounded-sm",
+              "flex justify-center items-center"
+            )}
+          >
+            {isLoading ? (
+              <IconSparkleLoader className="h-[20px] animate-loader" />
+            ) : (
+              <span className="font-abc-repro-mono font-bold w-[164px]">
+                Test Interaction
+              </span>
+            )}
+          </button>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 w-full">
+              <button
+                onClick={handleStop}
+                className={cn(
+                  "mt-4 group text-white flex-grow bg-red hover:rounded-sm hover:bg-white h-[52px] px-6 rounded-[100px] transition-all duration-300"
+                )}
+              >
+                <span className="font-abc-repro-mono group-hover:text-black font-bold w-[164px] transition-all duration-300">
+                  Stop Interaction
+                </span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
