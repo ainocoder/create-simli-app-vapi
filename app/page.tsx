@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SimliVapi from "@/app/SimliVapi";
+import SimliVapi from "./Components/SimliVapi";
 import DottedFace from "./Components/DottedFace";
 import SimliHeaderLogo from "./Components/Logo";
 import Navbar from "./Components/Navbar";
@@ -22,18 +22,7 @@ const avatar: avatarSettings = {
   simli_apikey: "",
 };
 
-interface SimliVapiProps {
-  simli_faceid: string;
-  agentId: string;
-  vapiKey: string;
-  simliKey: string;
-  onStart: () => void;
-  onClose: () => void;
-  showDottedFace: boolean;
-}
-
 const Demo: React.FC = () => {
-  const [showDottedFace, setShowDottedFace] = useState(true);
   const [agentId, setAgentId] = useState(avatar.vapi_agentid);
   const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
   const [vapiKey, setVapiKey] = useState(avatar.vapi_apikey || "");
@@ -49,15 +38,8 @@ const Demo: React.FC = () => {
     setAutoPlay(params.get('autoplay') === 'true');
   }, []);
 
-  const onStart = () => {
-    console.log("Setting setshowDottedface to false...");
-    setShowDottedFace(false);
-  };
-
-  const onClose = () => {
-    console.log("Setting setshowDottedface to true...");
-    setShowDottedFace(true);
-  };
+  const onStart = () => {};
+  const onClose = () => {};
 
   return (
     <div className="bg-black min-h-screen flex flex-col items-center font-abc-repro font-normal text-sm text-white p-8">
@@ -77,7 +59,6 @@ const Demo: React.FC = () => {
       </div>
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
-          {showDottedFace && <DottedFace />}
           <SimliVapi
             agentId={agentId}
             simli_faceid={simliFaceId}
@@ -85,7 +66,8 @@ const Demo: React.FC = () => {
             simliKey={simliKey}
             onStart={onStart}
             onClose={onClose}
-            showDottedFace={showDottedFace}
+            showDottedFace={false}
+            autoPlay={autoPlay}
           />
         </div>
       </div>
