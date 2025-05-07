@@ -24,6 +24,7 @@ interface SimliVapiProps {
   onStart: () => void;
   onClose: () => void;
   showDottedFace: boolean;
+  autoPlay: boolean;
 }
 
 const Demo: React.FC = () => {
@@ -74,6 +75,7 @@ const Demo: React.FC = () => {
             onStart={onStart}
             onClose={onClose}
             showDottedFace={showDottedFace}
+            autoPlay={autoPlay}
           />
         </div>
       </div>
