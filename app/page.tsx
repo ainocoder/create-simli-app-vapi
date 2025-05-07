@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SimliVapi from "./Components/SimliVapi";
+import SimliVapi from "@/app/SimliVapi";
 import DottedFace from "./Components/DottedFace";
 import SimliHeaderLogo from "./Components/Logo";
 import Navbar from "./Components/Navbar";
@@ -18,7 +18,16 @@ const avatar: avatarSettings = {
   simli_faceid: "1b8a957b-39cf-4b40-8e84-de676134b892",
 };
 
+interface SimliVapiProps {
+  simli_faceid: string;
+  agentId: string;
+  onStart: () => void;
+  onClose: () => void;
+  showDottedFace: boolean;
+}
+
 const Demo: React.FC = () => {
+  const [showDottedFace, setShowDottedFace] = useState(true);
   const [agentId, setAgentId] = useState(avatar.vapi_agentid);
   const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
   const [autoPlay, setAutoPlay] = useState(false);
@@ -30,8 +39,15 @@ const Demo: React.FC = () => {
     setAutoPlay(params.get('autoplay') === 'true');
   }, []);
 
-  const onStart = () => {};
-  const onClose = () => {};
+  const onStart = () => {
+    console.log("Setting setshowDottedface to false...");
+    setShowDottedFace(false);
+  };
+
+  const onClose = () => {
+    console.log("Setting setshowDottedface to true...");
+    setShowDottedFace(true);
+  };
 
   return (
     <div className="bg-black min-h-screen flex flex-col items-center font-abc-repro font-normal text-sm text-white p-8">
@@ -51,13 +67,13 @@ const Demo: React.FC = () => {
       </div>
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
+          {showDottedFace && <DottedFace />}
           <SimliVapi
             agentId={agentId}
             simli_faceid={simliFaceId}
             onStart={onStart}
             onClose={onClose}
-            showDottedFace={false}
-            autoPlay={autoPlay}
+            showDottedFace={showDottedFace}
           />
         </div>
       </div>
