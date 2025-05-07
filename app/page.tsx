@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SimliVapi from "./Components/SimliVapi";
+import SimliVapi from "@/app/SimliVapi";
 import DottedFace from "./Components/DottedFace";
 import SimliHeaderLogo from "./Components/Logo";
 import Navbar from "./Components/Navbar";
@@ -22,12 +22,22 @@ const avatar: avatarSettings = {
   simli_apikey: "",
 };
 
+interface SimliVapiProps {
+  simli_faceid: string;
+  agentId: string;
+  vapiKey: string;
+  simliKey: string;
+  onStart: () => void;
+  onClose: () => void;
+  showDottedFace: boolean;
+}
+
 const Demo: React.FC = () => {
+  const [showDottedFace, setShowDottedFace] = useState(true);
   const [agentId, setAgentId] = useState(avatar.vapi_agentid);
   const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
   const [vapiKey, setVapiKey] = useState(avatar.vapi_apikey || "");
   const [simliKey, setSimliKey] = useState(avatar.simli_apikey || "");
-  const [autoPlay, setAutoPlay] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -35,11 +45,17 @@ const Demo: React.FC = () => {
     setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
     setVapiKey(params.get('vapiKey') || avatar.vapi_apikey || "");
     setSimliKey(params.get('simliKey') || avatar.simli_apikey || "");
-    setAutoPlay(params.get('autoplay') === 'true');
   }, []);
 
-  const onStart = () => {};
-  const onClose = () => {};
+  const onStart = () => {
+    console.log("Setting setshowDottedface to false...");
+    setShowDottedFace(false);
+  };
+
+  const onClose = () => {
+    console.log("Setting setshowDottedface to true...");
+    setShowDottedFace(true);
+  };
 
   return (
     <div className="bg-black min-h-screen flex flex-col items-center font-abc-repro font-normal text-sm text-white p-8">
@@ -49,7 +65,7 @@ const Demo: React.FC = () => {
       <div className="absolute top-[32px] right-[32px]">
         <span
           onClick={() => {
-            window.open("create-simli-app-vapi-production.up.railway.app");
+            window.open("https://github.com/simliai/create-simli-app-vapi");
           }}
           className="font-bold cursor-pointer mb-8 text-xl leading-8"
         >
@@ -59,6 +75,7 @@ const Demo: React.FC = () => {
       </div>
       <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full">
         <div>
+          {showDottedFace && <DottedFace />}
           <SimliVapi
             agentId={agentId}
             simli_faceid={simliFaceId}
@@ -66,8 +83,7 @@ const Demo: React.FC = () => {
             simliKey={simliKey}
             onStart={onStart}
             onClose={onClose}
-            showDottedFace={false}
-            autoPlay={autoPlay}
+            showDottedFace={showDottedFace}
           />
         </div>
       </div>
