@@ -38,6 +38,7 @@ const Demo: React.FC = () => {
   const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
   const [vapiKey, setVapiKey] = useState(avatar.vapi_apikey || "");
   const [simliKey, setSimliKey] = useState(avatar.simli_apikey || "");
+  const [autoPlay, setAutoPlay] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,6 +46,7 @@ const Demo: React.FC = () => {
     setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
     setVapiKey(params.get('vapiKey') || avatar.vapi_apikey || "");
     setSimliKey(params.get('simliKey') || avatar.simli_apikey || "");
+    setAutoPlay(params.get('autoplay') === 'true');
   }, []);
 
   const onStart = () => {
@@ -65,7 +67,7 @@ const Demo: React.FC = () => {
       <div className="absolute top-[32px] right-[32px]">
         <span
           onClick={() => {
-            window.open("https://github.com/simliai/create-simli-app-vapi");
+            window.open("create-simli-app-vapi-production.up.railway.app");
           }}
           className="font-bold cursor-pointer mb-8 text-xl leading-8"
         >
