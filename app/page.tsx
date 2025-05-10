@@ -37,7 +37,7 @@ const Demo: React.FC = () => {
 
   return (
     <div className="bg-black min-h-screen flex flex-col items-center justify-center">
-      <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full max-w-[800px]">
+      <div className="flex flex-col items-center gap-6 bg-effect15White p-6 pb-[40px] rounded-xl w-full max-w-[1600px] max-h-[1600px]">
         <div>
           {showDottedFace && <DottedFace />}
           <SimliVapi

@@ -28,6 +28,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarVisible, setIsAvatarVisible] = useState(false);
   const [error, setError] = useState("");
+  const [isEnded, setIsEnded] = useState(false);
   const doRunOnce = useRef(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -54,6 +55,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     setIsAvatarVisible(false);
     simliClient?.close();
     onClose();
+    setIsEnded(true);
   }, [onClose]);
 
   const initializeSimliClient = useCallback(() => {
@@ -177,6 +179,12 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
               </span>
             )}
           </button>
+        ) : isEnded ? (
+          <div className="w-full h-[52px] mt-4 flex justify-center items-center">
+            <span className="font-abc-repro-mono font-bold w-[164px] text-white text-center">
+              체험이 종료되었어요^^
+            </span>
+          </div>
         ) : (
           <>
             <div className="flex items-center gap-4 w-full">
@@ -187,7 +195,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
                 )}
               >
                 <span className="font-abc-repro-mono group-hover:text-black font-bold w-[164px] transition-all duration-300">
-                  Stop Interaction
+                  종료하기
                 </span>
               </button>
             </div>
