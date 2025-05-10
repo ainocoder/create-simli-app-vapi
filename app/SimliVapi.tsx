@@ -144,10 +144,11 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   }, []);
 
   useEffect(() => {
-    if (autoPlay) {
+    if (autoPlay && !doRunOnce.current) {
+      doRunOnce.current = true;
       handleStart();
     }
-  }, [autoPlay]);
+  }, [autoPlay, handleStart]);
 
   return (
     <>
@@ -159,7 +160,7 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         <VideoBox video={videoRef} audio={audioRef} />
       </div>
       <div className="flex flex-col items-center">
-        {!isAvatarVisible ? (
+        {!isAvatarVisible && !autoPlay ? (
           <button
             onClick={handleStart}
             disabled={isLoading}
