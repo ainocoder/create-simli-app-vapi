@@ -10,7 +10,7 @@ interface avatarSettings {
 
 // Customize your avatar here
 const avatar: avatarSettings = {
-  vapi_agentid: "26638b9a-a7d0-48c5-9ce8-aba9bb2c1371",
+  vapi_agentid: "56b4bde4-a558-4d4e-a120-1cbbbc47e1ed",
   simli_faceid: "1b8a957b-39cf-4b40-8e84-de676134b892",
 };
 
@@ -23,7 +23,7 @@ const Demo: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const agentIdParam = params.get('agentId');
-    console.log('agentIdParam:', agentIdParam);
+    console.log('agentIdParam:', agentIdParam, 'window.location.search:', window.location.search);
     setAgentId(agentIdParam || avatar.vapi_agentid);
     setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
     setAutoPlay(params.get('autoplay') === 'true');
