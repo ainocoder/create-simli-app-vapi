@@ -22,7 +22,9 @@ const Demo: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setAgentId(params.get('agentId') || avatar.vapi_agentid);
+    const agentIdParam = params.get('agentId');
+    console.log('agentIdParam:', agentIdParam);
+    setAgentId(agentIdParam || avatar.vapi_agentid);
     setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
     setAutoPlay(params.get('autoplay') === 'true');
   }, []);

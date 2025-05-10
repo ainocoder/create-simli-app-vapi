@@ -152,6 +152,8 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     }
   }, [autoPlay, handleStart]);
 
+  console.log('SimliVapi agentId:', agentId);
+
   return (
     <>
       <div
