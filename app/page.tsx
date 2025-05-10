@@ -11,7 +11,15 @@ interface avatarSettings {
 // Customize your avatar here
 const avatar: avatarSettings = {
   vapi_agentid: "56b4bde4-a558-4d4e-a120-1cbbbc47e1ed",
-  simli_faceid: "1b8a957b-39cf-4b40-8e84-de676134b892",
+  simli_faceid: "f7dd4055-033a-4e8d-96e9-867670aed039",
+};
+
+const getInitialParam = (key: string, fallback: string) => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(key) || fallback;
+  }
+  return fallback;
 };
 
 const Demo: React.FC = () => {
@@ -19,15 +27,19 @@ const Demo: React.FC = () => {
   const [agentId, setAgentId] = useState(avatar.vapi_agentid);
   const [simliFaceId, setSimliFaceId] = useState(avatar.simli_faceid);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const agentIdParam = params.get('agentId');
-    console.log('agentIdParam:', agentIdParam, 'window.location.search:', window.location.search);
-    setAgentId(agentIdParam || avatar.vapi_agentid);
-    setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
-    setAutoPlay(params.get('autoplay') === 'true');
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setAgentId(params.get('agentId') || avatar.vapi_agentid);
+      setSimliFaceId(params.get('faceId') || avatar.simli_faceid);
+      setAutoPlay(params.get('autoplay') === 'true');
+      setIsReady(true);
+    }
   }, []);
+
+  if (!isReady) return null;
 
   const onStart = () => {
     setShowDottedFace(false);
