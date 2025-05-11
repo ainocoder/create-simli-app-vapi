@@ -30,33 +30,30 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
   const [error, setError] = useState("");
   const [isEnded, setIsEnded] = useState(false);
   const doRunOnce = useRef(false);
+  const autoEndTimer = useRef<NodeJS.Timeout | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const handleStart = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-    onStart();
-    try {
-      initializeSimliClient();
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      await simliClient?.start();
-      eventListenerSimli();
-    } catch (error: any) {
-      setError(`Error starting interaction: ${error.message}`);
-      setIsLoading(false);
-    }
-  }, [agentId, onStart]);
+  const handleStopRef = useRef<() => void>(() => {});
 
   const handleStop = useCallback(() => {
+    console.log("handleStop 호출됨");
     setIsLoading(false);
     setError("");
     setIsAvatarVisible(false);
     simliClient?.close();
     onClose();
     setIsEnded(true);
+    if (autoEndTimer.current) {
+      clearTimeout(autoEndTimer.current);
+      autoEndTimer.current = null;
+    }
   }, [onClose]);
+
+  useEffect(() => {
+    handleStopRef.current = handleStop;
+  }, [handleStop]);
 
   const initializeSimliClient = useCallback(() => {
     if (videoRef.current && audioRef.current) {
@@ -70,6 +67,40 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
       simliClient.Initialize(SimliConfig as any);
     }
   }, [simli_faceid]);
+
+  const eventListenerSimli = useCallback(() => {
+    if (simliClient) {
+      simliClient?.on("connected", () => {
+        const audioData = new Uint8Array(6000).fill(0);
+        simliClient?.sendAudioData(audioData);
+        startVapiInteraction();
+      });
+      simliClient?.on("disconnected", () => {
+        vapi.stop();
+      });
+    }
+  }, []);
+
+  const handleStart = useCallback(async () => {
+    setIsLoading(true);
+    setError("");
+    onStart();
+    if (autoEndTimer.current) clearTimeout(autoEndTimer.current);
+    console.log("타이머 시작: 1분 뒤 자동 종료 예정");
+    autoEndTimer.current = setTimeout(() => {
+      console.log("타이머 만료: 자동 종료 실행");
+      handleStopRef.current();
+    }, 70000);
+    try {
+      initializeSimliClient();
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await simliClient?.start();
+      eventListenerSimli();
+    } catch (error: any) {
+      setError(`Error starting interaction: ${error.message}`);
+      setIsLoading(false);
+    }
+  }, [agentId, onStart, initializeSimliClient, eventListenerSimli]);
 
   const startVapiInteraction = async () => {
     try {
@@ -132,19 +163,6 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
     });
   }, []);
 
-  const eventListenerSimli = useCallback(() => {
-    if (simliClient) {
-      simliClient?.on("connected", () => {
-        const audioData = new Uint8Array(6000).fill(0);
-        simliClient?.sendAudioData(audioData);
-        startVapiInteraction();
-      });
-      simliClient?.on("disconnected", () => {
-        vapi.stop();
-      });
-    }
-  }, []);
-
   useEffect(() => {
     if (autoPlay && !doRunOnce.current) {
       doRunOnce.current = true;
@@ -156,6 +174,12 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
 
   return (
     <>
+      {/* 로딩중 메시지: 아바타가 나타나기 전까지 상단 중앙에 표시 */}
+      {!isAvatarVisible && !isEnded && (
+        <div className="absolute top-8 left-0 right-0 flex justify-center z-20">
+          <span className="text-white text-xl font-bold bg-black bg-opacity-70 px-6 py-2 rounded-lg shadow-lg">로딩중...</span>
+        </div>
+      )}
       <div
         className={`transition-all duration-300 ${
           showDottedFace ? "h-0 overflow-hidden" : "h-auto"
@@ -164,7 +188,13 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
         <VideoBox video={videoRef} audio={audioRef} />
       </div>
       <div className="flex flex-col items-center">
-        {!isAvatarVisible && !autoPlay ? (
+        {isEnded ? (
+          <div className="w-full h-[52px] mt-4 flex justify-center items-center">
+            <span className="font-abc-repro-mono font-bold w-[164px] text-white text-center">
+              체험이 종료되었어요^^
+            </span>
+          </div>
+        ) : !isAvatarVisible && !autoPlay ? (
           <button
             onClick={handleStart}
             disabled={isLoading}
@@ -181,27 +211,19 @@ const SimliVapi: React.FC<SimliVapiProps> = ({
               </span>
             )}
           </button>
-        ) : isEnded ? (
-          <div className="w-full h-[52px] mt-4 flex justify-center items-center">
-            <span className="font-abc-repro-mono font-bold w-[164px] text-white text-center">
-              체험이 종료되었어요^^
-            </span>
-          </div>
         ) : (
-          <>
-            <div className="flex items-center gap-4 w-full">
-              <button
-                onClick={handleStop}
-                className={cn(
-                  "mt-4 group text-white flex-grow bg-red hover:rounded-sm hover:bg-white h-[52px] px-6 rounded-[100px] transition-all duration-300"
-                )}
-              >
-                <span className="font-abc-repro-mono group-hover:text-black font-bold w-[164px] transition-all duration-300">
-                  종료하기
-                </span>
-              </button>
-            </div>
-          </>
+          <div className="flex items-center gap-4 w-full">
+            <button
+              onClick={handleStop}
+              className={cn(
+                "mt-4 group text-white flex-grow bg-red hover:rounded-sm hover:bg-white h-[52px] px-6 rounded-[100px] transition-all duration-300"
+              )}
+            >
+              <span className="font-abc-repro-mono group-hover:text-black font-bold w-[164px] transition-all duration-300">
+                종료하기
+              </span>
+            </button>
+          </div>
         )}
       </div>
     </>
